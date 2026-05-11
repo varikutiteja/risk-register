@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Risk Register 2025</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f9f7;color:#1a1a1a;padding:2rem}
+    .top{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid #e5e5e0;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+    .top h1{font-size:20px;font-weight:600}
+    .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+    .metric{background:#fff;border:1px solid #e5e5e0;border-radius:10px;padding:12px 14px}
+    .metric-label{font-size:11px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+    .metric-val{font-size:22px;font-weight:600}
+    .main{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    .panel{background:#fff;border:1px solid #e5e5e0;border-radius:12px;padding:14px}
+    .panel-title{font-size:11px;font-weight:600;color:#888;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+    .matrix{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:3px;height:200px}
+    .cell{border-radius:4px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:2px;padding:2px;position:relative}
+    .dot{width:20px;height:20px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#333;border:1px solid rgba(0,0,0,.15);cursor:pointer;transition:transform .15s}
+    .dot:hover{transform:scale(1.2)}
+    .axis-wrap{display:grid;grid-template-columns:20px 1fr;gap:0}
+    .axis-y{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-right:6px;font-size:10px;color:#aaa;height:200px}
+    .axis-x{display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:4px}
+    .axis-label{font-size:10px;color:#aaa;text-align:center;margin-top:2px}
+    .risk-item{border:1px solid #e5e5e0;border-radius:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+    .risk-item:hover{border-color:#aaa}
+    .risk-item.selected{border-color:#1a1a1a}
+    .risk-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+    .risk-name{font-size:12px;font-weight:600}
+    .risk-meta{font-size:11px;color:#999}
+    .badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600}
+    .b-critical{background:#FCEBEB;color:#791F1F}
+    .b-high{background:#FAEEDA;color:#633806}
+    .b-medium{background:#E6F1FB;color:#0C447C}
+    .b-low{background:#EAF3DE;color:#27500A}
+    .detail{background:#fff;border:1px solid #ccc;border-radius:12px;padding:14px;margin-bottom:14px;display:none}
+    .detail.open{display:block}
+    .detail-title{font-size:16px;font-weight:600;margin-bottom:6px}
+    .detail-desc{font-size:13px;color:#555;line-height:1.6;margin-bottom:12px}
+    .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+    .dc label{font-size:11px;color:#999;display:block;margin-bottom:2px;text-transform:uppercase}
+    .dc p{font-size:13px;font-weight:600}
+    .mitigation{border-top:1px solid #e5e5e0;padding-top:12px}
+    .mit-label{font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+    .mit-text{font-size:13px;color:#555;line-height:1.6}
+    .close-btn{float:right;font-size:11px;color:#666;cursor:pointer;border:1px solid #ddd;border-radius:4px;padding:2px 8px;background:none}
+    @media(max-width:600px){.main,.summary{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<div class="top">
+  <h1>Risk Register — 2025</h1>
+</div>
+
+<div class="summary">
+  <div class="metric"><div class="metric-label">Total risks</div><div class="metric-val" id="m-total">0</div></div>
+  <div class="metric"><div class="metric-label">Critical</div><div class="metric-val" style="color:#A32D2D" id="m-critical">0</div></div>
+  <div class="metric"><div class="metric-label">High</div><div class="metric-val" style="color:#854F0B" id="m-high">0</div></div>
+  <div class="metric"><div class="metric-label">Mitigated</div><div class="metric-val" style="color:#3B6D11" id="m-mitigated">0</div></div>
+</div>
+
+<div id="detail" class="detail"></div>
+
+<div class="main">
+  <div class="panel">
+    <div class="panel-title">Probability vs impact matrix</div>
+    <div class="axis-wrap">
+      <div class="axis-y"><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+      <div>
+        <div class="matrix" id="matrix"></div>
+        <div class="axis-x"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+        <div class="axis-label">Impact →</div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">All risks</div>
+    <div id="risk-list"></div>
+  </div>
+</div>
+
+<script>
+const risks=[
+  {id:1,name:"Key engineer departure",prob:4,impact:5,owner:"Engineering lead",status:"Active",mitigation:"Cross-train 2 engineers on critical modules. Document all architecture decisions.",desc:"Loss of the lead engineer mid-project would severely impact delivery timelines and institutional knowledge."},
+  {id:2,name:"Regulatory change",prob:3,impact:5,owner:"Compliance team",status:"Monitoring",mitigation:"Monthly review of regulatory updates. Legal counsel on retainer.",desc:"New GDPR or CCPA regulations could require significant product changes with short compliance deadlines."},
+  {id:3,name:"Third party API failure",prob:4,impact:4,owner:"Dev T.",status:"Mitigated",mitigation:"Implemented fallback API and circuit breaker pattern. 99.9% uptime SLA in contract.",desc:"Core payment processing relies on a third-party API. Outage would block all transactions."},
+  {id:4,name:"Scope creep",prob:5,impact:3,owner:"PM",status:"Active",mitigation:"Weekly scope review. All new requests go through formal change control process.",desc:"Stakeholder requests for additional features mid-sprint are threatening Q2 delivery commitments."},
+  {id:5,name:"Budget overrun",prob:3,impact:4,owner:"Finance",status:"Monitoring",mitigation:"Monthly budget review. 15% contingency buffer built into project plan.",desc:"Infrastructure costs are trending 20% above forecast due to higher than expected data volumes."},
+  {id:6,name:"Low user adoption",prob:3,impact:3,owner:"Growth team",status:"Mitigated",mitigation:"User research completed. Onboarding redesign reduced drop-off by 34%.",desc:"Early beta testing showed users struggling with the onboarding flow leading to high drop-off rates."},
+  {id:7,name:"Data breach",prob:2,impact:5,owner:"Security",status:"Mitigated",mitigation:"SOC 2 audit completed. Penetration testing done quarterly. All data encrypted at rest.",desc:"A data breach would expose customer PII and trigger regulatory penalties and reputational damage."},
+  {id:8,name:"Vendor delay",prob:4,impact:2,owner:"PM",status:"Active",mitigation:"Identified backup vendor. Added 2 week buffer in project timeline.",desc:"Hardware vendor has communicated potential 3 week delay in delivery affecting infrastructure setup."},
+];
+
+function severity(p,i){const s=p*i;if(s>=16)return"critical";if(s>=9)return"high";if(s>=4)return"medium";return"low";}
+function sevLabel(p,i){const s=p*i;if(s>=16)return"Critical";if(s>=9)return"High";if(s>=4)return"Medium";return"Low";}
+function cellColor(p,i){const s=p*i;if(s>=16)return"#FCEBEB";if(s>=9)return"#FAEEDA";if(s>=4)return"#E6F1FB";return"#EAF3DE";}
+
+function renderMatrix(){
+  const matrix=document.getElementById("matrix");
+  matrix.innerHTML="";
+  for(let p=5;p>=1;p--){
+    for(let i=1;i<=5;i++){
+      const cell=document.createElement("div");
+      cell.className="cell";
+      cell.style.background=cellColor(p,i);
+      risks.filter(r=>r.prob===p&&r.impact===i).forEach(r=>{
+        const dot=document.createElement("div");
+        dot.className="dot";
+        dot.textContent=r.id;
+        dot.title=r.name;
+        dot.onclick=(e)=>{e.stopPropagation();openDetail(r.id)};
+        cell.appendChild(dot);
+      });
+      matrix.appendChild(cell);
+    }
+  }
+}
+
+function renderList(){
+  const list=document.getElementById("risk-list");
+  list.innerHTML="";
+  risks.forEach(r=>{
+    const div=document.createElement("div");
+    div.className="risk-item";
+    div.id="risk-"+r.id;
+    div.innerHTML=`<div class="risk-top"><span class="risk-name">${r.id}. ${r.name}</span><span class="badge b-${severity(r.prob,r.impact)}">${sevLabel(r.prob,r.impact)}</span></div><div class="risk-meta">Owner: ${r.owner} · P:${r.prob} I:${r.impact} · ${r.status}</div>`;
+    div.onclick=()=>openDetail(r.id);
+    list.appendChild(div);
+  });
+}
+
+function openDetail(id){
+  const r=risks.find(x=>x.id===id);
+  const panel=document.getElementById("detail");
+  panel.innerHTML=`<button class="close-btn" onclick="closeDetail
