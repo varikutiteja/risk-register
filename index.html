@@ -135,4 +135,39 @@ function renderList(){
 function openDetail(id){
   const r=risks.find(x=>x.id===id);
   const panel=document.getElementById("detail");
-  panel.innerHTML=`<button class="close-btn" onclick="closeDetail
+  panel.innerHTML=`<button class="close-btn" onclick="closeDetail()">close</button>
+    <div class="detail-title">${r.name}</div>
+    <div class="detail-desc">${r.desc}</div>
+    <div class="detail-grid">
+      <div class="dc"><label>Severity</label><p>${sevLabel(r.prob,r.impact)}</p></div>
+      <div class="dc"><label>Probability</label><p>${r.prob} / 5</p></div>
+      <div class="dc"><label>Impact</label><p>${r.impact} / 5</p></div>
+      <div class="dc"><label>Owner</label><p>${r.owner}</p></div>
+      <div class="dc"><label>Status</label><p>${r.status}</p></div>
+      <div class="dc"><label>Score</label><p>${r.prob*r.impact} / 25</p></div>
+    </div>
+    <div class="mitigation"><div class="mit-label">Mitigation plan</div><div class="mit-text">${r.mitigation}</div></div>`;
+  panel.classList.add("open");
+  document.querySelectorAll(".risk-item").forEach(el=>el.classList.remove("selected"));
+  const el=document.getElementById("risk-"+id);
+  if(el)el.classList.add("selected");
+}
+
+function closeDetail(){
+  document.getElementById("detail").classList.remove("open");
+  document.querySelectorAll(".risk-item").forEach(el=>el.classList.remove("selected"));
+}
+
+function updateMetrics(){
+  document.getElementById("m-total").textContent=risks.length;
+  document.getElementById("m-critical").textContent=risks.filter(r=>r.prob*r.impact>=16).length;
+  document.getElementById("m-high").textContent=risks.filter(r=>{const s=r.prob*r.impact;return s>=9&&s<16}).length;
+  document.getElementById("m-mitigated").textContent=risks.filter(r=>r.status==="Mitigated").length;
+}
+
+renderMatrix();
+renderList();
+updateMetrics();
+</script>
+</body>
+</html>
